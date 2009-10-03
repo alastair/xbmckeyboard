@@ -1,0 +1,17 @@
+An app that will send keyboard events to the virtual keyboard
+on an xmbc installation.
+
+Setup
+-----
+create a file ~/.xbmckeyrc with contents
+[xbmckey]
+host=xbox:8080
+user=xbmc
+pass=pass
+
+Ensure the XBMC webserver is running (Settings -> Network)
+
+
+Notes:
+http://developer.boxee.tv/remote-control-interface/
+http://www.xbmc.org/wiki/?title=Web_Server_HTTP_API
