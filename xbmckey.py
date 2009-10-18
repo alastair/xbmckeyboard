@@ -11,25 +11,38 @@ config=ConfigParser.RawConfigParser()
 BASE_KEY = 0xF100
 
 alternates = {
-  '\x7f' : 0xF108, # Backspace
-  '\n': 0x100, # Select
-#  '': 0x10E, # Up
-#  '': 0x10F # Down
+  65362: 0x10E, # Up
+  65364: 0x10F, # Down
+  65361: 0x110, # left
+  65363: 0x111 # right
 }
 
 def send_key(c):
 	if c in alternates:
 		tosend = alternates[c]	
 	else:
-		tosend = BASE_KEY + ord(c)
+		tosend = BASE_KEY + c
 	host = config.get("xbmckey", "host")
-	urllib2.urlopen("http://%s/xbmcCmds/xbmcHttp?command=SendKey(0x%X)" % (host, tosend))
+	try:
+		urllib2.urlopen("http://%s/xbmcCmds/xbmcHttp?command=SendKey(0x%X)" % (host, tosend))
+	except urllib2.HTTPError, e:
+		if e.code == 401:
+			print "Unauthorised: is your user/pass set correctly?"
+	except urllib2.URLError:
+		print "Connection refused: is the host set correctly and running?"
 
-def main():
+def load():
+	config.add_section("xbmckey")
+	config.set("xbmckey", "host", "")
+	config.set("xbmckey", "user", "")
+	config.set("xbmckey", "pass", "")
 	config.read(os.path.expanduser("~/.xbmckeyrc"))
 	host = config.get("xbmckey", "host")
 	username = config.get("xbmckey", "user")
 	password = config.get("xbmckey", "pass")
+
+	if host == "":
+		return False
 
 	auth_handler = urllib2.HTTPBasicAuthHandler()
 	auth_handler.add_password(realm='GoAhead',
@@ -38,31 +51,4 @@ def main():
 	      passwd=password)
 	opener = urllib2.build_opener(auth_handler)
 	urllib2.install_opener(opener)
-
-	print "Ensure XBMC is at a keyboard entry and start typing..."
-	# This code from http://pyfaq.infogami.com/how-do-i-get-a-single-keypress-at-a-time
-	fd = sys.stdin.fileno()
-
-	oldterm = termios.tcgetattr(fd)
-	newattr = termios.tcgetattr(fd)
-	newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-	termios.tcsetattr(fd, termios.TCSANOW, newattr)
-
-	oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-	fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
-
-	try:
-	    while 1:
-	        try:
-	            c = sys.stdin.read(1)
-		    send_key(c)
-	        except IOError: pass
-	finally:
-	    termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
-	    fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
-
-if __name__ == "__main__":
-	try:
-		main()
-	except KeyboardInterrupt, ki:
-		pass
+	return True
