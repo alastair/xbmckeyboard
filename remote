@@ -1,0 +1,45 @@
+#!/usr/bin/python
+
+import sys
+import gtk
+import xbmckey
+
+def delete_event(widget, event, data=None):
+	return False
+
+def destroy(widget, data=None):
+	gtk.main_quit()
+
+def on_key_press_event(widget, event):
+	if event.keyval == ord('q') and event.state & gtk.gdk.CONTROL_MASK:
+		destroy(0)
+		return
+	if event.keyval > 65500:
+		# These are modifiers like shift/ctrl/alt. Don't send
+		return
+	#keyname = gtk.gdk.keyval_name(event.keyval)
+	#print "Key %s (%d) was pressed" % (keyname, event.keyval)
+	xbmckey.send_key(event.keyval)
+
+def main():
+	if not xbmckey.load():
+		print "Can't find settings in ~/.xbmckeyrc"
+		sys.exit(1)
+	window = gtk.Window()
+	window.set_size_request(200, 100)
+	window.set_resizable(True)
+	window.set_title("XBMC Remote")
+
+	window.connect("delete_event", delete_event)
+	window.connect("destroy", destroy)
+	window.connect('key_press_event', on_key_press_event)
+	box = gtk.VBox(False, 3)
+
+	label = gtk.Label("Start typing... ^q to quit")
+
+	window.add(label)
+	window.show_all()
+	gtk.main()
+
+if __name__ == "__main__":
+	main()
